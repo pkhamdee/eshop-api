@@ -48,6 +48,14 @@ builder.Services.AddHealthChecks()
 
 builder.Services.AddProblemDetails();
 
+// The OpenAPI description (/openapi/v1.json) feeds the ZAP API scan in the temporary copy (scripts/gates/dast.sh).
+// It is served only when OpenApi:Enabled is set; the cluster never sets it, and the Gateway routes only /api anyway.
+var openApiEnabled = builder.Configuration.GetValue<bool>("OpenApi:Enabled");
+if (openApiEnabled)
+{
+    builder.Services.AddOpenApi();
+}
+
 var app = builder.Build();
 
 if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
@@ -59,6 +67,18 @@ if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 // Staff accounts come from per-environment configuration (SOPS Secret eshop-api-staff in the cluster).
 await StaffAccounts.ProvisionAsync(app.Services, app.Configuration, CancellationToken.None);
 
+// Every response, refusals and errors included, tells browsers not to sniff its content type. Set as the response
+// starts, so the exception handler clearing the headers doesn't drop it.
+app.Use((context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers.XContentTypeOptions = "nosniff";
+        return Task.CompletedTask;
+    });
+    return next(context);
+});
+
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseAuthentication();
@@ -67,6 +87,10 @@ app.UseAuthorization();
 // Probes stay outside /api so the Gateway never exposes them.
 app.MapHealthChecks("/healthz/live", new HealthCheckOptions { Predicate = _ => false });
 app.MapHealthChecks("/healthz/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
+if (openApiEnabled)
+{
+    app.MapOpenApi();
+}
 
 var api = app.MapGroup("/api");
 api.MapCatalogEndpoints();

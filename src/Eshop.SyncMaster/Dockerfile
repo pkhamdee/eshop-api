@@ -14,4 +14,6 @@ RUN dotnet publish src/Eshop.SyncMaster/Eshop.SyncMaster.csproj -c Release -o /a
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra
 WORKDIR /app
 COPY --from=build /app .
+# The base image already runs as uid 1654; stating it keeps the SAST gate (and readers) from assuming root.
+USER $APP_UID
 ENTRYPOINT ["dotnet", "Eshop.SyncMaster.dll"]
