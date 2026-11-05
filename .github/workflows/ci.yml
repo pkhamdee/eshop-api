@@ -1,0 +1,58 @@
+# eshop-api's CI (eshop-api and eshop-sync-master: one .NET solution, two images) (ADR 0009; pkhamdee/modernapp's docs/git-workflow.md, "Service repositories").
+#   - pull request to main or release/*  -> format check, build and tests, then the shared gates' SAST and dependency scan
+#   - push to main                       -> also both images: built, eshop-api run in the temporary copy beside the
+#                                           other services' newest main images (the copy has no sync master),
+#                                           gated, scanned, then pushed as docker.io/pkhamdee/eshop-api and
+#                                           eshop-sync-master :main-<sha>-<ts> (Flux deploys them to dev)
+#   - push to release/N.x                -> the same, pushed as release-N.x-<sha>-<ts> (a patch's images)
+#   - workflow_dispatch on main or release/N.x -> rebuilds and pushes that branch's image the same way
+# The gates are pkhamdee/modernapp's .github/workflows/service-image.yml. The jobs a pull request runs are main's
+# required checks, by name: renaming one means re-running pkhamdee/modernapp's scripts/protect-main.sh.
+name: CI
+
+on:
+  push:
+    branches: [main, "release/*"]
+  pull_request:
+    branches: [main, "release/*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    name: eshop-api (lint, test)
+    # Seam-1 tests (eshop-api) start PostgreSQL with Testcontainers; Seam-2 tests (eshop-sync-master) also start SQL
+    # Server, which has no Arm image: this job must stay on an x86 runner (ubuntu-latest).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      # Locked mode: the committed packages.lock.json files are what the dependency scan reads, so a package change
+      # without its regenerated lock file fails here.
+      - run: dotnet restore --locked-mode
+      - name: Lint
+        run: dotnet format --verify-no-changes --no-restore
+      - name: Build
+        run: dotnet build --no-restore -c Release
+      - name: Test
+        run: dotnet test --no-build -c Release
+
+  image:
+    name: image
+    needs: [lint]
+    uses: pkhamdee/modernapp/.github/workflows/service-image.yml@main
+    with:
+      images: >-
+        [{"service": "eshop-api", "context": ".", "dockerfile": "src/Eshop.Api/Dockerfile"},
+         {"service": "eshop-sync-master", "context": ".", "dockerfile": "src/Eshop.SyncMaster/Dockerfile"}]
+    # The shared gates' push job reads DOCKERHUB_USERNAME and DOCKERHUB_TOKEN from this repository's `publish`
+    # environment, which a called workflow sees only with `secrets: inherit` (accepted in sast-accepted.txt).
+    secrets: inherit

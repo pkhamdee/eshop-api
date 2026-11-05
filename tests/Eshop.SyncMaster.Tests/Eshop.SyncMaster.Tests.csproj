@@ -20,8 +20,9 @@
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
   <ItemGroup>
-    <!-- The same fake enterprise schema the cluster's SQL Server gets (deploy/thirdparty/mssql). -->
-    <None Include="..\..\..\..\deploy\thirdparty\mssql\enterprise-schema.sql" Link="enterprise-schema.sql" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The mock Enterprise System's fake schema: this copy is the source of truth. pkhamdee/modernapp deploys the
+         same file to the cluster's SQL Server (deploy/thirdparty/mssql), and its CI fails while the two differ. -->
+    <None Include="enterprise-schema.sql" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
