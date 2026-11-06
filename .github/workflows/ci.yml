@@ -1,4 +1,4 @@
-# eshop-api's CI (eshop-api and eshop-sync-master: one .NET solution, two images) (ADR 0009; pkhamdee/modernapp's docs/git-workflow.md, "Service repositories").
+# eshop-api's CI (eshop-api and eshop-sync-master: one .NET solution, two images) (ADR 0009; pkhamdee/eshop-infra's docs/git-workflow.md, "Service repositories").
 #   - pull request to main or release/*  -> format check, build and tests, then the shared gates' SAST and dependency scan
 #   - push to main                       -> also both images: built, eshop-api run in the temporary copy beside the
 #                                           other services' newest main images (the copy has no sync master),
@@ -6,8 +6,8 @@
 #                                           eshop-sync-master :main-<sha>-<ts> (Flux deploys them to dev)
 #   - push to release/N.x                -> the same, pushed as release-N.x-<sha>-<ts> (a patch's images)
 #   - workflow_dispatch on main or release/N.x -> rebuilds and pushes that branch's image the same way
-# The gates are pkhamdee/modernapp's .github/workflows/service-image.yml. The jobs a pull request runs are main's
-# required checks, by name: renaming one means re-running pkhamdee/modernapp's scripts/protect-main.sh.
+# The gates are pkhamdee/eshop-infra's .github/workflows/service-image.yml. The jobs a pull request runs are main's
+# required checks, by name: renaming one means re-running pkhamdee/eshop-infra's scripts/protect-main.sh.
 name: CI
 
 on:
@@ -48,7 +48,7 @@ jobs:
   image:
     name: image
     needs: [lint]
-    uses: pkhamdee/modernapp/.github/workflows/service-image.yml@main
+    uses: pkhamdee/eshop-infra/.github/workflows/service-image.yml@main
     with:
       images: >-
         [{"service": "eshop-api", "context": ".", "dockerfile": "src/Eshop.Api/Dockerfile"},
