@@ -1,5 +1,5 @@
-# SAST findings accepted in this repository (pkhamdee/modernapp's scripts/gates/sast.sh reads this file):
+# SAST findings accepted in this repository (pkhamdee/eshop-infra's scripts/gates/sast.sh reads this file):
 # rule-id | path-glob | reason
-yaml.github-actions.security.secrets-inherit | .github/workflows/ci.yml | The shared gates (pkhamdee/modernapp's service-image.yml) see the publish environment's Docker Hub secrets only through secrets: inherit; this repository has no other secrets, and only the push job, in environment publish (main and release/* only), uses them.
+yaml.github-actions.security.secrets-inherit | .github/workflows/ci.yml | The shared gates (pkhamdee/eshop-infra's service-image.yml) see the publish environment's Docker Hub secrets only through secrets: inherit; this repository has no other secrets, and only the push job, in environment publish (main and release/* only), uses them.
 csharp.lang.security.sqli.csharp-sqli | tests/Eshop.SyncMaster.Tests/EnterpriseDatabase.cs | Test helper: ExecuteAsync is private and only ever called with SQL literals; values go in as SqlParameters.
 csharp.lang.security.sqli.csharp-sqli | tests/Eshop.SyncMaster.Tests/SyncMasterFactory.cs | Test setup: CREATE DATABASE takes no parameters; the name is the constant EnterpriseDatabase ("enterprise_test").

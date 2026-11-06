@@ -1,6 +1,6 @@
 # Conventions for eshop-api
 
-What the code does not tell you at a glance. Moved here from pkhamdee/modernapp's `docs/agents/conventions.md` when
+What the code does not tell you at a glance. Moved here from pkhamdee/eshop-infra's `docs/agents/conventions.md` when
 eshop-api got its own repository (ADR 0009); the system-wide conventions (local environment, deploy, human-only
 steps) are still there.
 
@@ -9,7 +9,7 @@ steps) are still there.
 - **Docker**: point each command at Rancher Desktop's socket, e.g. `DOCKER_HOST=unix:///Users/pongsak/.rd/docker.sock`.
 - **Testcontainers** on Rancher Desktop needs both `DOCKER_HOST` (above) and
   `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock` (the socket path inside the VM); without the
-  override Ryuk fails to start (`../modernapp/docs/setup.md`, "Developing").
+  override Ryuk fails to start (`../eshop-infra/docs/setup.md`, "Developing").
 - **.NET 10** is at `~/.dotnet`, not on `PATH`: set `DOTNET_ROOT=$HOME/.dotnet` and prepend
   `$HOME/.dotnet:$HOME/.dotnet/tools` to `PATH`. If the shell guard rejects `export` or variables as command
   names, a tiny wrapper script with literal paths (`exec /Users/pongsak/.dotnet/dotnet "$@"`) works.
@@ -31,13 +31,13 @@ Layout:
   direct reference (see `System.Security.Cryptography.Pkcs`). Each project has a committed `packages.lock.json`
   (the dependency-scan gate reads it; CI restores with `--locked-mode`): run `dotnet restore` after any package
   change and commit the lock files.
-- Gates (`../modernapp/scripts/gates/*.sh`, `../modernapp/docs/setup.md` "Running the gates locally"): a Semgrep
+- Gates (`../eshop-infra/scripts/gates/*.sh`, `../eshop-infra/docs/setup.md` "Running the gates locally"): a Semgrep
   ERROR that is a false positive goes in this repository's `sast-accepted.txt` with a reason; `nosemgrep` comments are ignored. The ZAP gate
   (`dast.sh`) scans every operation in the OpenAPI description, which eshop-api serves only with
-  `OpenApi:Enabled` (set in the temporary copy alone); a High alert to accept goes in `../modernapp/scripts/gates/dast-rules.conf`
+  `OpenApi:Enabled` (set in the temporary copy alone); a High alert to accept goes in `../eshop-infra/scripts/gates/dast-rules.conf`
   under a `# reason:` line. Every response carries `X-Content-Type-Options: nosniff` (Program.cs). It scans again
   signed in as a Customer and as Staff (`dast-session.mjs`) and fails if either got no 2xx from its role's paths
-  (`CUSTOMER_ONLY` / `STAFF_ONLY` in `../modernapp/scripts/gates/dast.sh`): a new Customer-only area outside those patterns needs adding there.
+  (`CUSTOMER_ONLY` / `STAFF_ONLY` in `../eshop-infra/scripts/gates/dast.sh`): a new Customer-only area outside those patterns needs adding there.
 
 Adding an endpoint:
 
@@ -95,7 +95,7 @@ Third-party ports: interface + real adapter in `Eshop.Api/ThirdParty/` (typed `H
 `AddThirdParties` against `ThirdParty:BaseUrl`; an in-memory fake in `tests/.../Fakes/` exposed as a property on
 `EshopApiFactory`. The image service port is `Images/IImageStore`; store only the image ID in Postgres.
 
-Migrations: `dotnet ef migrations add <Name> --project src/Eshop.Data` (`../modernapp/docs/setup.md`). Only eshop-api applies
+Migrations: `dotnet ef migrations add <Name> --project src/Eshop.Data` (`../eshop-infra/docs/setup.md`). Only eshop-api applies
 them, at startup (`Database:MigrateOnStartup`). Demo data is seeded by `UseSeeding`/`UseAsyncSeeding` into empty
 tables only (no `HasData`, so identity sequences stay right). On a model-snapshot conflict after a rebase, or after
 a bad `migrations remove`: check out `origin/main`'s `EshopDbContextModelSnapshot.cs`, delete your migration files
@@ -110,7 +110,7 @@ eshop-sync-master:
   lock, overlapping pullers (rolling update, parallel tests) hit duplicate keys.
 - Enterprise tables have triggers, so `UPDATE ... OUTPUT` without `INTO` fails; use rows affected. Schema changes go
   in `tests/Eshop.SyncMaster.Tests/enterprise-schema.sql` (idempotent), the source of truth: the tests run it, and
-  pkhamdee/modernapp deploys a copy (`deploy/thirdparty/mssql/`) that its CI keeps identical. Change it here first.
+  pkhamdee/eshop-infra deploys a copy (`deploy/thirdparty/mssql/`) that its CI keeps identical. Change it here first.
 - SqlClient needs ICU: SyncMaster sets `InvariantGlobalization=false` and uses the `-chiseled-extra` image.
   eshop-api stays invariant. Npgsql connection strings include `GSS Encryption Mode=Disable` (libgssapi noise on
   chiseled images).
