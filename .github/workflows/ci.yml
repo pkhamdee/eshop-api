@@ -48,6 +48,11 @@ jobs:
   image:
     name: image
     needs: [lint]
+    # id-token: the shared gates sign each image they push, keyless, with this run's GitHub OIDC identity
+    # (pkhamdee/eshop-infra#127). A called workflow gets no permission its caller doesn't grant.
+    permissions:
+      contents: read
+      id-token: write
     uses: pkhamdee/eshop-infra/.github/workflows/service-image.yml@main
     with:
       images: >-
