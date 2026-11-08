@@ -3,7 +3,9 @@
 #   - push to main                       -> also both images: built, eshop-api run in the temporary copy beside the
 #                                           other services' newest main images (the copy has no sync master),
 #                                           gated, scanned, then pushed as docker.io/pkhamdee/eshop-api and
-#                                           eshop-sync-master :main-<sha>-<ts> (Flux deploys them to dev)
+#                                           eshop-sync-master :main-<sha>-<ts> (Flux deploys them to dev),
+#                                           and signed keyless with this run's identity (the `image` job's
+#                                           id-token: write; pkhamdee/eshop-infra's ADR 0011)
 #   - push to release/N.x                -> the same, pushed as release-N.x-<sha>-<ts> (a patch's images)
 #   - workflow_dispatch on main or release/N.x -> rebuilds and pushes that branch's image the same way
 # The gates are pkhamdee/eshop-infra's .github/workflows/service-image.yml. The jobs a pull request runs are main's
