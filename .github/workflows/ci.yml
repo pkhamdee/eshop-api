@@ -33,8 +33,8 @@ jobs:
     # Server, which has no Arm image: this job must stay on an x86 runner (ubuntu-latest).
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
       # Locked mode: the committed packages.lock.json files are what the dependency scan reads, so a package change
